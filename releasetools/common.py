@@ -196,31 +196,49 @@ def DumpInfoDict(d):
   for k, v in sorted(d.items()):
     print "%-25s = (%s) %s" % (k, type(v).__name__, v)
 
-def BuildBootableImage(sourcedir, fs_config_file):
-  """Take a kernel, cmdline, and ramdisk directory from the input (in
-  'sourcedir'), and turn them into a boot image.  Return the image
-  data, or None if sourcedir does not appear to contains files for
-  building the requested image."""
+def BuildCombinedBootableImage(sourcedir, combinedroot_fs_config_file, boot_fs_config_file, recovery_fs_config_file):
 
-  if (not os.access(os.path.join(sourcedir, "RAMDISK"), os.F_OK) or
-      not os.access(os.path.join(sourcedir, "kernel"), os.F_OK)):
+  if (not os.access(os.path.join(sourcedir, "COMBINEDROOT"), os.F_OK) or
+      not os.access(os.path.join(sourcedir, "BOOT"), os.F_OK) or
+      not os.access(os.path.join(sourcedir, "BOOT/kernel"), os.F_OK) or
+      not os.access(os.path.join(sourcedir, "RECOVERY"), os.F_OK)):
     return None
 
-  ramdisk_img = tempfile.NamedTemporaryFile()
+  ramdisk_cpio = open(os.path.join(sourcedir, "COMBINEDROOT/sbin/ramdisk.cpio"), "w")
+  recovery_cpio = open(os.path.join(sourcedir, "COMBINEDROOT/sbin/ramdisk-recovery.cpio"), "w")
+  combinedroot_fs = tempfile.NamedTemporaryFile()
   img = tempfile.NamedTemporaryFile()
 
-  if os.access(fs_config_file, os.F_OK):
-    cmd = ["mkbootfs", "-f", fs_config_file, os.path.join(sourcedir, "RAMDISK")]
+  if os.access(boot_fs_config_file, os.F_OK):
+    cmd = ["mkbootfs", "-f", boot_fs_config_file, os.path.join(sourcedir, "BOOT/RAMDISK")]
   else:
-    cmd = ["mkbootfs", os.path.join(sourcedir, "RAMDISK")]
+    cmd = ["mkbootfs", os.path.join(sourcedir, "BOOT/RAMDISK")]
+  p = Run(cmd, stdout=ramdisk_cpio.fileno())
+  p.wait()
+  assert p.returncode == 0, "mkbootfs of %s boot/ramdisk failed" % (targetname,)
+  ramdisk_cpio.close()
+
+  if os.access(recovery_fs_config_file, os.F_OK):
+    cmd = ["mkbootfs", "-f", recovery_fs_config_file, os.path.join(sourcedir, "RECOVERY/RAMDISK")]
+  else:
+    cmd = ["mkbootfs", os.path.join(sourcedir, "RECOVERY/RAMDISK")]
+  p = Run(cmd, stdout=recovery_cpio.fileno())
+  p.wait()
+  assert p.returncode == 0, "mkbootfs of %s recovery/ramdisk failed" % (targetname,)
+  recovery_cpio.close()
+
+  if os.access(combinedroot_fs_config_file, os.F_OK):
+    cmd = ["mkbootfs", "-f", combinedroot_fs_config_file, os.path.join(sourcedir, "COMBINEDROOT")]
+  else:
+    cmd = ["mkbootfs", os.path.join(sourcedir, "COMBINEDROOT")]
   p1 = Run(cmd, stdout=subprocess.PIPE)
   p2 = Run(["minigzip"],
-           stdin=p1.stdout, stdout=ramdisk_img.file.fileno())
+           stdin=p1.stdout, stdout=combinedroot_fs.file.fileno())
 
   p2.wait()
   p1.wait()
-  assert p1.returncode == 0, "mkbootfs of %s ramdisk failed" % (targetname,)
-  assert p2.returncode == 0, "minigzip of %s ramdisk failed" % (targetname,)
+  assert p1.returncode == 0, "mkbootfs of %s combinedroot fs failed" % (targetname,)
+  assert p2.returncode == 0, "minigzip of %s combinedroot fs failed" % (targetname,)
 
   """check if uboot is requested"""
   fn = os.path.join(sourcedir, "ubootargs")
@@ -229,34 +247,20 @@ def BuildBootableImage(sourcedir, fs_config_file):
     for argument in open(fn).read().rstrip("\n").split(" "):
       cmd.append(argument)
     cmd.append("-d")
-    cmd.append(os.path.join(sourcedir, "kernel")+":"+ramdisk_img.name)
+    cmd.append(os.path.join(sourcedir, "BOOT/kernel")+":"+ramdisk_img.name)
     cmd.append(img.name)
 
   else:
-    cmd = ["mkbootimg", "--kernel", os.path.join(sourcedir, "kernel")]
+    cmd = ["device/sony/tamsui-common/tools/mkelf.py", "-o", img.name]
 
-    fn = os.path.join(sourcedir, "cmdline")
+    fn = os.path.join(sourcedir, "BOOT/kernel")
+    cmd.append(fn + '@0x00208000')
+
+    cmd.append(combinedroot_fs.name + '@0x01400000,ramdisk')
+
+    fn = os.path.join(sourcedir, "BOOT/cmdline")
     if os.access(fn, os.F_OK):
-      cmd.append("--cmdline")
-      cmd.append(open(fn).read().rstrip("\n"))
-
-    fn = os.path.join(sourcedir, "base")
-    if os.access(fn, os.F_OK):
-      cmd.append("--base")
-      cmd.append(open(fn).read().rstrip("\n"))
-
-    fn = os.path.join(sourcedir, "pagesize")
-    if os.access(fn, os.F_OK):
-      cmd.append("--pagesize")
-      cmd.append(open(fn).read().rstrip("\n"))
-
-    fn = os.path.join(sourcedir, "ramdiskaddr")
-    if os.access(fn, os.F_OK):
-      cmd.append("--ramdiskaddr")
-      cmd.append(open(fn).read().rstrip("\n"))
-
-    cmd.extend(["--ramdisk", ramdisk_img.name,
-                "--output", img.name])
+      cmd.append(open(fn).read().rstrip("\n") + '@cmdline')
 
   p = Run(cmd, stdout=subprocess.PIPE)
   p.communicate()
@@ -266,13 +270,13 @@ def BuildBootableImage(sourcedir, fs_config_file):
   img.seek(os.SEEK_SET, 0)
   data = img.read()
 
-  ramdisk_img.close()
+  combinedroot_fs.close()
   img.close()
 
   return data
 
 
-def GetBootableImage(name, prebuilt_name, unpack_dir, tree_subdir):
+def GetCombinedBootableImage(name, prebuilt_name, unpack_dir):
   """Return a File object (with name 'name') with the desired bootable
   image.  Look for it in 'unpack_dir'/BOOTABLE_IMAGES under the name
   'prebuilt_name', otherwise construct it from the source files in
@@ -283,10 +287,14 @@ def GetBootableImage(name, prebuilt_name, unpack_dir, tree_subdir):
     print "using prebuilt %s..." % (prebuilt_name,)
     return File.FromLocalFile(name, prebuilt_path)
   else:
-    print "building image from target_files %s..." % (tree_subdir,)
-    fs_config = "META/" + tree_subdir.lower() + "_filesystem_config.txt"
-    return File(name, BuildBootableImage(os.path.join(unpack_dir, tree_subdir),
-                                         os.path.join(unpack_dir, fs_config)))
+    print "building image from target_files %s..." % (unpack_dir,)
+    combinedroot_fs_config = "META/combinedroot_filesystem_config.txt"
+    boot_fs_config = "META/boot_filesystem_config.txt"
+    recovery_fs_config = "META/recovery_filesystem_config.txt"
+    return File(name, BuildCombinedBootableImage(unpack_dir,
+                                         os.path.join(unpack_dir, combinedroot_fs_config),
+                                         os.path.join(unpack_dir, boot_fs_config),
+                                         os.path.join(unpack_dir, recovery_fs_config)))
 
 
 def UnzipTemp(filename, pattern=None):

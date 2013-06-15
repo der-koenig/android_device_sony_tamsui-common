@@ -418,8 +418,8 @@ def WriteFullOTAPackage(input_zip, output_zip):
   symlinks = CopySystemFiles(input_zip, output_zip)
   script.MakeSymlinks(symlinks)
 
-  #boot_img = common.GetBootableImage("boot.img", "boot.img",
-  #                                   OPTIONS.input_tmp, "BOOT")
+  boot_img = common.GetCombinedBootableImage("boot.img", "boot.img",
+                                     OPTIONS.input_tmp)
   #recovery_img = common.GetBootableImage("recovery.img", "recovery.img",
   #                                       OPTIONS.input_tmp, "RECOVERY")
   #MakeRecoveryPatch(output_zip, recovery_img, boot_img)
@@ -427,13 +427,13 @@ def WriteFullOTAPackage(input_zip, output_zip):
   Item.GetMetadata(input_zip)
   Item.Get("system").SetPermissions(script)
 
-  kernel_img = open(OPTIONS.device_out + '/boot.img','r')
-  common.ZipWriteStr(output_zip, "boot.img", kernel_img.read())
-  kernel_img.close()
+#  kernel_img = open(OPTIONS.device_out + '/boot.img','r')
+#  common.ZipWriteStr(output_zip, "boot.img", kernel_img.read())
+#  kernel_img.close()
 
-#  common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
-#  common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
-#  script.ShowProgress(0.2, 0)
+  common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
+  common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
+  script.ShowProgress(0.2, 0)
 
   if OPTIONS.backuptool:
     script.ShowProgress(0.2, 10)
@@ -563,10 +563,10 @@ def WriteIncrementalOTAPackage(target_zip, source_zip, output_zip):
   script.Mount("/system")
   script.AssertSomeFingerprint(source_fp, target_fp)
 
-  source_boot = common.GetBootableImage(
-      "/tmp/boot.img", "boot.img", OPTIONS.source_tmp, "BOOT")
-  target_boot = common.GetBootableImage(
-      "/tmp/boot.img", "boot.img", OPTIONS.target_tmp, "BOOT")
+  source_boot = common.GetCombinedBootableImage(
+      "/tmp/boot.img", "boot.img", OPTIONS.source_tmp)
+  target_boot = common.GetCombinedBootableImage(
+      "/tmp/boot.img", "boot.img", OPTIONS.target_tmp)
   updating_boot = (source_boot.data != target_boot.data)
 
   #source_recovery = common.GetBootableImage(
