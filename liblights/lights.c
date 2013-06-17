@@ -154,10 +154,23 @@ static void set_shared_light_locked (struct light_device_t *dev, struct light_st
 
 #ifndef STANDARD_LIGHTS
 	if (state->flashMode != LIGHT_FLASH_NONE) {
+#ifndef SUB_LED_NOTIFICATION
 		err = write_string (LED_CONTROL_FILE, RED_LED_BLINK_ON);
 		err = write_string (LED_CONTROL_FILE, GREEN_LED_BLINK_ON);
 		err = write_string (LED_CONTROL_FILE, BLUE_LED_BLINK_ON);
+#else
+		err = write_string (LED_CONTROL_FILE, RED2_LED_BLINK_ON);
+		err = write_string (LED_CONTROL_FILE, GREEN2_LED_BLINK_ON);
+		err = write_string (LED_CONTROL_FILE, BLUE2_LED_BLINK_ON);
+#endif
 	} else {
+
+#ifdef SUB_LED_NOTIFICATION
+		err = write_string (LED_CONTROL_FILE, RED2_LED_BLINK_OFF);
+		err = write_string (LED_CONTROL_FILE, GREEN2_LED_BLINK_OFF);
+		err = write_string (LED_CONTROL_FILE, BLUE2_LED_BLINK_OFF);
+#endif
+
 	if (r>0)
 		err = write_string (LED_CONTROL_FILE, RED_LED_ON);
 	else

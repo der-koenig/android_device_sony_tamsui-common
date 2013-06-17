@@ -119,6 +119,14 @@ on post-fs
     chown system system /sys/devices/platform/sony_ssm/set_late_resume_notifications
     chown system system /sys/devices/platform/sony_ssm/set_request_next_suspend_prepare_notification
 
+    #Permission for Lights
+    chown system system /sys/class/led/fih_led/control
+    chown system system /sys/devices/virtual/graphics/fb0/msmfb_bl0/brightness
+    chown system system /sys/devices/platform/msm_fb.590593/leds/lcd-backlight/brightness
+
+    #vibrator
+    chown system system /sys/class/vibrator/pmic-vib/control
+
     # To prevent out of order acknowledgements from making
     # connection tracking to treat them as not belonging to
     # the connection they belong to.
@@ -225,8 +233,25 @@ on post-fs-data
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,9,12
     write /proc/sys/vm/min_free_kbytes 8192
 
-   start qcamerasvr
-   start gpu_dcvsd
+    start qcamerasvr
+    start gpu_dcvsd
+
+    rm /data/misc/dhcp/*
+
+service setmsflagbc /system/bin/startupflag bootstarted
+    user root
+    oneshot
+    disabled
+
+# Set the startup flag to boot complete, run on property change
+service setssflagbc /system/bin/startupflag bootcomplete
+    class main
+    user root
+    oneshot
+    disabled
+
+on property:dev.bootcomplete=1
+    start setssflagbc
 
 service updatemiscta /system/bin/updatemiscta
     class emmc
@@ -257,6 +282,8 @@ service tad /sbin/tad /dev/block/mmcblk0 8,16,256
     user root
     group root
     socket tad stream 0660 system system
+on property:init.svc.wpa_supplicant=stopped
+    stop dhcpcd
 
 on property:sys.radio.shutdown=true
    exec /system/bin/sh /system/etc/init.qcom.efs.sync.sh
