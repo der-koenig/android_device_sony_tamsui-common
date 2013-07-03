@@ -91,8 +91,8 @@ import edify_generator
 OPTIONS = common.OPTIONS
 OPTIONS.package_key = None
 OPTIONS.incremental_source = None
-OPTIONS.require_verbatim = set(("system/app/Provision.apk",))
-OPTIONS.optional_patches = set(("system/app/QuickSearchBox.apk",))
+OPTIONS.require_verbatim = set()
+OPTIONS.optional_patches = set(("system/app/Provision.apk","system/app/QuickSearchBox.apk",))
 OPTIONS.prohibit_verbatim = set(("system/build.prop",))
 OPTIONS.patch_threshold = 0.95
 OPTIONS.wipe_user_data = False
