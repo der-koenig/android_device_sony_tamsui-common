@@ -36,21 +36,24 @@ busybox grep -Eq "^64|128$" /proc/sys/kernel/boot_reason
 
 if [[ $? != 0 ]]
 then
-	# trigger ON amber LED
-	busybox echo ${BOOTREC_RED_LED_ON} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_GREEN_LED_OFF} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_BLUE_LED_ON} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_BUTTON_LED_ON} > ${BOOTREC_CONTROL_LED}
+	if [ ! -e /cache/recovery/boot ]
+	then
+	        # trigger ON amber LED
+	        busybox echo ${BOOTREC_RED_LED_ON} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_GREEN_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_BLUE_LED_ON} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_BUTTON_LED_ON} > ${BOOTREC_CONTROL_LED}
 
-	# keycheck
-	busybox cat ${BOOTREC_EVENT} > /dev/keycheck&
-	busybox sleep 3
+	        # keycheck
+	        busybox cat ${BOOTREC_EVENT} > /dev/keycheck&
+	        busybox sleep 3
 
-	# trigger OFF amber LED
-	busybox echo ${BOOTREC_RED_LED_OFF} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_GREEN_LED_OFF} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_BLUE_LED_OFF} > ${BOOTREC_CONTROL_LED}
-	busybox echo ${BOOTREC_BUTTON_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	        # trigger OFF amber LED
+	        busybox echo ${BOOTREC_RED_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_GREEN_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_BLUE_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	        busybox echo ${BOOTREC_BUTTON_LED_OFF} > ${BOOTREC_CONTROL_LED}
+	fi
 
 	# boot decision
 	if [ -s /dev/keycheck -o -e /cache/recovery/boot ]
