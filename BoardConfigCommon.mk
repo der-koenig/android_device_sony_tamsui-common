@@ -114,7 +114,7 @@ BOARD_USES_LEGACY_RIL := true
 BOARD_RIL_CLASS := ../../../device/sony/tamsui-common/ril/
 
 # Web Rendering
-PRODUCT_PREBUILT_WEBVIEWCHROMIUM := yes
+#PRODUCT_PREBUILT_WEBVIEWCHROMIUM := yes
 TARGET_FORCE_CPU_UPLOAD := true
 ENABLE_WEBGL := true
 
