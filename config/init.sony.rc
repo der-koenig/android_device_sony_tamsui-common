@@ -396,3 +396,11 @@ service thermald /system/bin/thermald -c /system/etc/thermald.conf
     class main
     socket thermald stream 0666 root root
     user root
+
+service fm_dl /system/bin/sh /system/etc/init.qcom.fm.sh
+    class late_start
+    user root
+    group system qcom_oncrpc
+    disabled
+    oneshot
+
