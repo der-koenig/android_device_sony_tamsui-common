@@ -1,0 +1,11 @@
+import /init.recovery.device.rc
+
+service rmt_storage /sbin/rmt_storage
+    class core
+    user root
+    disabled
+
+service ta_rmt_service /sbin/ta_rmt_service
+    class late_start
+    user root
+    disabled
