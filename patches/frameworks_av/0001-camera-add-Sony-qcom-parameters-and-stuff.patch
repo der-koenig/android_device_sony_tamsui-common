@@ -1,0 +1,102 @@
+From a0aa4959662ddec752a10839df94445cc521affe Mon Sep 17 00:00:00 2001
+From: lozohcum <lozohcum@gmail.com>
+Date: Wed, 14 May 2014 12:34:23 +0200
+Subject: [PATCH] camera: add Sony qcom parameters and stuff
+
+Change-Id: Ic760a1a8dbae6920782611f583ce538d996b3ab0
+---
+ camera/CameraParameters.cpp                        |   18 +++++++++++++++++-
+ include/camera/CameraParameters.h                  |   13 ++++++++++++-
+ .../camera/libcameraservice/api1/CameraClient.cpp  |    2 +-
+ 3 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/camera/CameraParameters.cpp b/camera/CameraParameters.cpp
+index 6fb235d..d571cb4 100644
+--- a/camera/CameraParameters.cpp
++++ b/camera/CameraParameters.cpp
+@@ -23,6 +23,15 @@
+ #include <camera/CameraParameters.h>
+ 
+ namespace android {
++#ifdef QCOM_SONY_HARDWARE
++const char CameraParameters::KEY_EX_SUPPORTED_METERING_MODES[] = "semc-metering-mode-values";
++const char CameraParameters::EX_SCENE_MODE_DOCUMENT[] = "document";
++const char CameraParameters::SCENE_MODE_DOCUMENT[] = "document";
++const char CameraParameters::KEY_SEMC_METRY_MODE[] = "semc-metering-mode";
++const char CameraParameters::SEMC_METRY_CENTER[] = "center-weighted";
++const char CameraParameters::SEMC_METRY_FRAME[] = "frame-adverage";
++const char CameraParameters::SEMC_METRY_SPOT[] = "spot";
++#endif
+ // Parameter keys to communicate between camera application and driver.
+ const char CameraParameters::KEY_PREVIEW_SIZE[] = "preview-size";
+ const char CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES[] = "preview-size-values";
+@@ -981,7 +990,12 @@ void CameraParameters::getMeteringAreaCenter(int *x, int *y) const
+         *y = (arr[1] + arr[3])/2; //center_y = (y1+y2)/2
+     }
+ }
+-
++#ifdef QCOM_SONY_HARDWARE
++void CameraParameters::getFocusAreaCenter(int *x, int *y) const
++{
++    // dummy
++}
++#endif
+ void CameraParameters::getTouchIndexAf(int *x, int *y) const
+ {
+     *x = -1;
+@@ -998,6 +1012,8 @@ void CameraParameters::getTouchIndexAf(int *x, int *y) const
+         *y = tempY;
+     }
+ }
++
++
+ #endif
+ 
+ status_t CameraParameters::dump(int fd, const Vector<String16>& args) const
+diff --git a/include/camera/CameraParameters.h b/include/camera/CameraParameters.h
+index 5c3bde5..08fcffa 100644
+--- a/include/camera/CameraParameters.h
++++ b/include/camera/CameraParameters.h
+@@ -1067,7 +1067,15 @@ public:
+     // Values for HDR settings.
+     static const char HDR_ENABLE[];
+     static const char HDR_DISABLE[];
+-
++#ifdef QCOM_SONY_HARDWARE
++    static const char EX_SCENE_MODE_DOCUMENT[];
++    static const char SCENE_MODE_DOCUMENT[];
++     static const char KEY_EX_SUPPORTED_METERING_MODES[];
++     static const char KEY_SEMC_METRY_MODE[];
++     static const char SEMC_METRY_CENTER[];
++     static const char SEMC_METRY_FRAME[];
++     static const char SEMC_METRY_SPOT[];
++#endif
+ #if defined(QCOM_HARDWARE) && defined(SAMSUNG_CAMERA_LEGACY)
+     static const char FOCUS_MODE_FACEDETECT[];
+     static const char FOCUS_MODE_TOUCHAF[];
+@@ -1109,6 +1117,9 @@ public:
+     void setPostviewSize(int x, int y);
+ #endif
+     void getSupportedHfrSizes(Vector<Size> &sizes) const;
++#ifdef QCOM_SONY_HARDWARE
++    void getFocusAreaCenter(int *x, int *y) const;
++#endif
+ #endif
+ 
+ private:
+diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/camera/libcameraservice/api1/CameraClient.cpp
+index 1235aad..2bbaf56 100644
+--- a/services/camera/libcameraservice/api1/CameraClient.cpp
++++ b/services/camera/libcameraservice/api1/CameraClient.cpp
+@@ -709,7 +709,7 @@ status_t CameraClient::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2) {
+     } else if (cmd == CAMERA_CMD_PING) {
+         // If mHardware is 0, checkPidAndHardware will return error.
+         return OK;
+-#ifdef QCOM_HARDWARE
++#if defined(QCOM_HARDWARE) && !defined(ICS_CAMERA_BLOB)
+     } else if (cmd == CAMERA_CMD_HISTOGRAM_ON) {
+         enableMsgType(CAMERA_MSG_STATS_DATA);
+     } else if (cmd == CAMERA_CMD_HISTOGRAM_OFF) {
+-- 
+1.7.5.4
+
