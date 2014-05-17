@@ -286,3 +286,4 @@ struct hw_module_t HAL_MODULE_INFO_SYM = {
 	.author = "Diogo Ferreira <defer@cyanogenmod.com>,Alin Jerpelea<jerpelea@gmail.com>",
 	.methods = &lights_module_methods,
 };
+
