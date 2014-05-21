@@ -223,6 +223,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Enable Sony apps in play store
 PRODUCT_PACKAGES += \
     ro.com.google.clientidbase.ms=android-sonymobile
+    
+# Set default USB interface
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.usb.config=mtp,adb  
 
 # $(call inherit-product, vendor/sony/qcom-common/qcom-common-vendor.mk)
 
