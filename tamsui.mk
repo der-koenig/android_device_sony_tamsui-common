@@ -219,6 +219,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     hw.fm.isAnalog=true
+    
+# Enable Sony apps in play store
+PRODUCT_PACKAGES += \
+    ro.com.google.clientidbase.ms=android-sonymobile
 
 # $(call inherit-product, vendor/sony/qcom-common/qcom-common-vendor.mk)
 
