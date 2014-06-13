@@ -17,6 +17,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml \
     packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml
+#    frameworks/native/data/etc/com.stericsson.hardware.fm.receiver.xml:system/etc/permissions/com.stericsson.hardware.fm.receiver.xml \
 
 # Ramdisk
 PRODUCT_COPY_FILES += \
@@ -218,6 +219,14 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     hw.fm.isAnalog=true
+    
+# Enable Sony apps in play store
+PRODUCT_PACKAGES += \
+    ro.com.google.clientidbase.ms=android-sonymobile
+    
+# Set default USB interface
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.usb.config=mtp,adb  
 
 # $(call inherit-product, vendor/sony/qcom-common/qcom-common-vendor.mk)
 
