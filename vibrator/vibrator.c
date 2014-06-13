@@ -24,7 +24,13 @@
 
 #include <time.h>
 
+#include "vibrator.h"
+
+#ifdef MSM_RPC_VIBRATOR
+#define THE_DEVICE "/sys/devices/virtual/timed_output/vibrator/enable_vibrator"
+#else
 #define THE_DEVICE "/sys/class/vibrator/pmic-vib/control"
+#endif
 
 int vibrator_exists()
 {
@@ -47,9 +53,19 @@ int sendit(int timeout_ms)
     if(fd < 0)
         return errno;
 
+#ifdef MSM_RPC_VIBRATOR
+    nwr = sprintf(value, "%d\n", timeout_ms);
+    ret = write(fd, value, nwr);
+
+    close(fd);
+
+    return (ret == nwr) ? 0 : -1;
+#else 
     char buffer[20];
 
+
     if (timeout_ms > 0){
+
         nwr = snprintf(buffer, sizeof(buffer), "%s\n", "ON");
         ret = write (fd, buffer, nwr);
         usleep (timeout_ms*1000);
@@ -60,5 +76,5 @@ int sendit(int timeout_ms)
     close(fd);
 
     return (ret == nwr) ? 0 : -1;
+#endif
 }
-
